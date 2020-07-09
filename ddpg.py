@@ -9,23 +9,19 @@ import copy
 
 TAU = 0.001
 GAMMA = 0.99
-LR_ACTOR = 1e-4
-LR_CRITIC = 1e-3
-BUFFER_SIZE = int(1e6)
-BATCH_SIZE = 256
 
 class DDPG_agent:
-    def __init__(self, actor_state_size, actor_action_size, critic_state_size, critic_action_size, buffer_size=BUFFER_SIZE, batch_size=BATCH_SIZE, sigma=0.0):
+    def __init__(self, actor_state_size, actor_action_size, critic_state_size, critic_action_size, buffer_size, batch_size, lr_actor, lr_critic, sigma=0.0):
         self.buffer_size = buffer_size
         self.batch_size = batch_size
         self.sigma=sigma
         self.actor_local = Actor(actor_state_size, actor_action_size)
         self.actor_target = Actor(actor_state_size, actor_action_size)
-        self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr=LR_ACTOR)
+        self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr=lr_actor)
 
         self.critic_local = Critic(critic_state_size, critic_action_size)
         self.critic_target = Critic(critic_state_size, critic_action_size)
-        self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC, weight_decay=0.)
+        self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=lr_critic, weight_decay=0.)
 
         self.noise = Noise(size=actor_action_size, mu=0., sigma=self.sigma)
         
@@ -67,8 +63,6 @@ class DDPG_agent:
         self.critic_optimizer.step()
 
         ## update actor
-#         action_pred = self.actor_local.forward(states)
-#         Q = self.critic_local.forward(states, action_pred)
 
         Q = self.critic_local(states_full, full_actions_pred)
         actor_loss = -Q.mean()

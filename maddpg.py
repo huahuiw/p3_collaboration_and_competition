@@ -4,16 +4,15 @@ from ddpg import DDPG_agent
 from collections import namedtuple, deque
 import random
 
-
 class MADDPG:
-    def __init__(self, num_agents, state_size=24, action_size=2, buffer_size = int(1e6), batch_size = 256, sigma=0.0):
+    def __init__(self, num_agents, state_size=24, action_size=2, buffer_size = int(1e6), batch_size = 256, lr_actor=0.001, lr_critic=0.001, sigma=0.0):
         self.num_agents = num_agents
         self.state_size = state_size
         self.action_size = action_size
         self.batch_size = batch_size
         self.agents = []
         for i in range(self.num_agents):
-            agent = DDPG_agent(state_size, action_size, num_agents*state_size, num_agents*action_size, buffer_size, batch_size, sigma)
+            agent = DDPG_agent(state_size, action_size, num_agents*state_size, num_agents*action_size, buffer_size, batch_size, lr_actor, lr_critic, sigma)
             self.agents.append(agent)
         
         self.memory = ReplayBuffer(buffer_size, batch_size)
@@ -41,9 +40,6 @@ class MADDPG:
         
         self.memory.add(states, states_full, actions, rewards, next_states, next_states_full, dones)
         
-        #self.time_step += 1
-
-    #if (self.time_step % UPDATE_EVERY) == 0:
         if len(self.memory) > 10*self.batch_size:
             for i in range(self.num_agents):
                 Experiences = self.memory.sample()
@@ -59,10 +55,7 @@ class MADDPG:
     def learn(self, agent_n, Experience):
         states, states_full, actions, rewards, next_states, next_states_full, dones = Experience
         
-        #print("states shape:", states.shape) [128, 2, 24]
-        #print("next_states shape:", next_states.shape) [128, 2, 4]
-        #print("rewards shape:", rewards.shape) [128,2]
-        
+      
         ## generate full actions for both agents to train their local critic and actor networks 
         actions_next_full = []
         for i in range(self.num_agents):
@@ -76,8 +69,6 @@ class MADDPG:
         
         
         ## generate full actions using states from a given agent's actor_local network
-#         action_pred = self.actor_local.forward(states)
-#         Q = self.critic_local.forward(states, action_pred)
         agent = self.agents[agent_n]
         action_pred = agent.actor_local(states[:,agent_n,:])
         
